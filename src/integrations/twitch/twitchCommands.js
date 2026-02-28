@@ -161,7 +161,7 @@ function createCommands(context) {
         userCooldown.add(botState.commandCaller)
         setTimeout(() => userCooldown.delete(botState.commandCaller), WITHER_COOLDOWN_MS)
       }
-      return ''
+      return `${uname} dodged the wither cast by ${botState.commandCaller}!`
     }
 
     try {
