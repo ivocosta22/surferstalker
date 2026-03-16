@@ -146,8 +146,8 @@ function createCommands(context) {
     if (!username) return ''
 
     if (userCooldown.has(botState.commandCaller)) {
-      logColor('cyan', `[TWITCH] 🤡 ${botState.commandCaller} is on cooldown for wither`)
-      return ''
+      logColor('cyan', `[TWITCH] 🤡 ${botState.commandCaller} is on cooldown for wither.`)
+      return `${botState.commandCaller} is on cooldown for wither... 🤡`
     }
 
     const uname = username.replace('@', '').toLowerCase()
@@ -161,7 +161,7 @@ function createCommands(context) {
         userCooldown.add(botState.commandCaller)
         setTimeout(() => userCooldown.delete(botState.commandCaller), WITHER_COOLDOWN_MS)
       }
-      return `${uname} dodged the wither cast by ${botState.commandCaller}!`
+      return `${uname} dodged the wither cast by ${botState.commandCaller}! 🤡`
     }
 
     try {
