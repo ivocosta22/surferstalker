@@ -25,6 +25,9 @@ const { twitch, discord, obs } = require('./config/env')
 const obsController = require('./integrations/obs/obsController')
 const { createCommands } = require('./integrations/twitch/twitchCommands')
 const { registerTwitchRewards } = require('./integrations/twitch/twitchRewards')
+const { startTitleMonitor } = require('./integrations/twitch/titleMonitor')
+const titleUpdatePingList = require('./config/titleUpdatePingList')
+const readline = require('readline')
 
 process.on('unhandledRejection', (reason) => {
   logColor('red', `[SYSTEM] Unhandled Rejection: ${reason}`)
@@ -81,6 +84,53 @@ try {
 ComfyJS.onConnected = () => logColor('green', `[TWITCH] ✅ Connected to ComfyJS`)
 
 // ============================================================
+// Terminal -> Twitch Chat Bridge
+// Sends terminal input to Twitch chat through ComfyJS
+// ============================================================
+function startTerminalChatBridge() {
+  if (!process.stdin || process.stdin.isTTY === false) {
+    logColor('yellow', '[SYSTEM] Terminal chat bridge unavailable in this runtime.')
+    return null
+  }
+
+  const terminalInterface = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+    terminal: true
+  })
+
+  terminalInterface.setPrompt('')
+  terminalInterface.prompt()
+
+  terminalInterface.on('line', (line) => {
+    const message = line.trim()
+
+    if (!message) {
+      terminalInterface.prompt()
+      return
+    }
+
+    try {
+      ComfyJS.Say(message)
+      logColor('cyan', `[TWITCH] Terminal message sent: ${message}`)
+    } catch (error) {
+      logColor('red', `[TWITCH] Failed to send terminal message: ${error?.message || error}`)
+    }
+
+    terminalInterface.prompt()
+  })
+
+  terminalInterface.on('close', () => {
+    logColor('yellow', '[SYSTEM] Terminal chat bridge closed.')
+  })
+
+  logColor('green', '[SYSTEM] Terminal chat bridge ready. Type a message and press Enter to send it to Twitch chat.')
+  return terminalInterface
+}
+
+const terminalChatBridge = startTerminalChatBridge()
+
+// ============================================================
 // Shared Bot Runtime State
 // Injected into command handlers for cross-command coordination
 // ============================================================
@@ -101,6 +151,7 @@ const commands = createCommands({
 })
 
 registerTwitchRewards({ ComfyJS, botState, obsController, logColor })
+startTitleMonitor({ ComfyJS, botState, logColor, pingUsers: titleUpdatePingList })
 
 // ============================================================
 // Secondary Twitch IRC client
@@ -294,6 +345,10 @@ discordClient.login(discord.botToken).catch(err => {
 // ============================================================
 process.on('SIGINT', async () => {
   logColor('yellow', '[SYSTEM] ⚠️ Shutdown signal received')
+
+  try {
+    terminalChatBridge?.close()
+  } catch {}
 
   try {
     await twitchChatClient.disconnect()

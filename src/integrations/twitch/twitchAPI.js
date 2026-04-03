@@ -171,6 +171,41 @@ async function getUserCategory(username) {
 }
 
 /**
+ * Fetches channel information for a broadcaster.
+ *
+ * @param {string} broadcasterId
+ * @returns {Promise<object|null>} channel info or null on failure
+ */
+async function getChannelInformation(broadcasterId) {
+  try {
+    const token = await getToken('app')
+    if (!token) {
+      logColor('red', '[TWITCH] ❌ Could not acquire a valid token for getChannelInformation')
+      return null
+    }
+
+    const url = `${twitch.APIEndpoint}/channels?broadcaster_id=${encodeURIComponent(broadcasterId)}`
+    const res = await superfetch.get(url).set(getApiHeaders(token))
+
+    if (res.status !== 200) {
+      logColor('red', `[TWITCH] ❌ Failed to fetch channel info for broadcaster ${broadcasterId}. Status: ${res.status} ${res.statusText}`)
+      return null
+    }
+
+    const channelData = res.body?.data
+    if (!channelData || channelData.length === 0) {
+      logColor('red', `[TWITCH] ❌ No channel data found for broadcaster ${broadcasterId}`)
+      return null
+    }
+
+    return channelData[0]
+  } catch (error) {
+    logColor('red', `[TWITCH] ❌ Error getting channel info for broadcaster ${broadcasterId}: ${error}`)
+    return null
+  }
+}
+
+/**
  * Returns either an app token (client credentials) or a persisted user token.
  *
  * @param {'app'|'user'} [type='user']
@@ -326,5 +361,6 @@ async function getNewAuthToken() {
 module.exports = Object.freeze({
   getToken,
   getUser,
-  getUserCategory
+  getUserCategory,
+  getChannelInformation
 })

@@ -10,5 +10,6 @@
 module.exports = {
   startTime: Date.now(),
   commandCaller: null,
-  timeouts: {}
+  timeouts: {},
+  lastKnownStreamTitle: null
 }
