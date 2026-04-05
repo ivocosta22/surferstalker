@@ -4,6 +4,6 @@
 
 -TODO: Case Sensitive Commands
 
--TODO: !SO should do a /announcement
+-TODO: Test Automatic raids
 
 -TODO: Test User token automization

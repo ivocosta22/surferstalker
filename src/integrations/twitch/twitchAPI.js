@@ -206,6 +206,53 @@ async function getChannelInformation(broadcasterId) {
 }
 
 /**
+ * Sends a highlighted Twitch chat announcement.
+ *
+ * @param {object} params
+ * @param {string} params.broadcasterId
+ * @param {string} params.moderatorId
+ * @param {string} params.message
+ * @param {'blue'|'green'|'orange'|'purple'|'primary'} [params.color='primary']
+ * @returns {Promise<boolean>}
+ */
+async function sendChatAnnouncement({ broadcasterId, moderatorId, message, color = 'primary' }) {
+  if (!broadcasterId || !moderatorId || !message?.trim()) return false
+
+  try {
+    const token = await getToken('user')
+    if (!token) {
+      logColor('red', '[TWITCH] ❌ Could not acquire a valid user token for sendChatAnnouncement')
+      return false
+    }
+
+    const res = await superfetch
+      .post(`${twitch.APIEndpoint}/chat/announcements`)
+      .query({
+        broadcaster_id: broadcasterId,
+        moderator_id: moderatorId
+      })
+      .set('Authorization', `Bearer ${token}`)
+      .set('Client-Id', twitch.botClientId)
+      .set('Content-Type', 'application/json')
+      .send(JSON.stringify({
+        message: message.trim(),
+        color
+      }))
+
+    if (res.status === 204) {
+      logColor('green', `[TWITCH] ✅ Announcement sent: ${message.trim()}`)
+      return true
+    }
+
+    logColor('red', `[TWITCH] ❌ Failed to send announcement. Status: ${res.status} ${res.statusText}`)
+    return false
+  } catch (error) {
+    logColor('red', `[TWITCH] ❌ Error sending announcement: ${error?.message || error}`)
+    return false
+  }
+}
+
+/**
  * Returns either an app token (client credentials) or a persisted user token.
  *
  * @param {'app'|'user'} [type='user']
@@ -362,5 +409,6 @@ module.exports = Object.freeze({
   getToken,
   getUser,
   getUserCategory,
-  getChannelInformation
+  getChannelInformation,
+  sendChatAnnouncement
 })

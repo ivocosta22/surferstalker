@@ -18,6 +18,20 @@ const { getToken, getUser, getUserCategory } = require('./twitchAPI')
 const WITHER_COOLDOWN_MS = 300_000
 
 /**
+ * Builds the standard shoutout chat message for a Twitch user.
+ *
+ * @param {string} username
+ * @returns {Promise<string>}
+ */
+async function buildShoutoutMessage(username) {
+  if (!username) return ''
+
+  const uname = username.replace('@', '').toLowerCase()
+  const category = await getUserCategory(uname)
+  return `Check out ${uname} at https://twitch.tv/${uname}, they are playing ${category || 'something cool'}!`
+}
+
+/**
  * Calculates stacking timeout duration and updates botState.
  *
  * @param {object} botState
@@ -129,12 +143,7 @@ function createCommands(context) {
   // Async Commands (Twitch API / ComfyJS)
   // ============================================================
   const soCommand = async (username) => {
-
-    if (!username) return ''
-
-    const uname = username.replace('@', '').toLowerCase()
-    const category = await getUserCategory(uname)
-    return `Check out ${uname} at https://twitch.tv/${uname}, they are playing ${category || 'something cool'}!`
+    return buildShoutoutMessage(username)
   }
 
   const categoryCommand = async () => {
@@ -324,5 +333,6 @@ const timeoutCommand = async (context, username) => {
 
 module.exports = Object.freeze({
   createCommands,
-  timeoutCommand
+  timeoutCommand,
+  buildShoutoutMessage
 })

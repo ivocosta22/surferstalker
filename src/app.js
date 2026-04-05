@@ -22,8 +22,9 @@ logColor('cyan', '[SYSTEM] 👓 SurferStalker is starting...')
 
 
 const { twitch, discord, obs } = require('./config/env')
+const { sendChatAnnouncement } = require('./integrations/twitch/twitchAPI')
 const obsController = require('./integrations/obs/obsController')
-const { createCommands } = require('./integrations/twitch/twitchCommands')
+const { createCommands, buildShoutoutMessage } = require('./integrations/twitch/twitchCommands')
 const { registerTwitchRewards } = require('./integrations/twitch/twitchRewards')
 const { startTitleMonitor } = require('./integrations/twitch/titleMonitor')
 const titleUpdatePingList = require('./config/titleUpdatePingList')
@@ -130,6 +131,10 @@ function startTerminalChatBridge() {
 
 const terminalChatBridge = startTerminalChatBridge()
 
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 // ============================================================
 // Shared Bot Runtime State
 // Injected into command handlers for cross-command coordination
@@ -152,6 +157,30 @@ const commands = createCommands({
 
 registerTwitchRewards({ ComfyJS, botState, obsController, logColor })
 startTitleMonitor({ ComfyJS, botState, logColor, pingUsers: titleUpdatePingList })
+ComfyJS.onRaid = async (user, viewers) => {
+  try {
+    const raider = user?.trim()
+    if (!raider) return
+
+    const shoutoutMessage = await buildShoutoutMessage(raider)
+    if (!shoutoutMessage) return
+
+    logColor('yellow', `[TWITCH] Raid received from ${raider} with ${viewers ?? 'unknown'} viewer(s).`)
+
+    ComfyJS.Say(`!so ${raider}`)
+    await delay(600)
+    ComfyJS.Say(shoutoutMessage)
+    await delay(600)
+    await sendChatAnnouncement({
+      broadcasterId: twitch.channelUserId,
+      moderatorId: twitch.botUserId,
+      message: shoutoutMessage,
+      color: 'blue'
+    })
+  } catch (error) {
+    logColor('red', `[TWITCH] Raid shoutout error: ${error?.message || error}`)
+  }
+}
 
 // ============================================================
 // Secondary Twitch IRC client
