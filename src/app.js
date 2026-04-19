@@ -21,8 +21,8 @@ const { logColor } = require('./utils/logger')
 logColor('cyan', '[SYSTEM] 👓 SurferStalker is starting...')
 
 
-const { twitch, discord, obs } = require('./config/env')
-const { sendChatAnnouncement } = require('./integrations/twitch/twitchAPI')
+const { twitch, discord, obs, chat } = require('./config/env')
+const { sendChatAnnouncement, getToken } = require('./integrations/twitch/twitchAPI')
 const obsController = require('./integrations/obs/obsController')
 const { createCommands, buildShoutoutMessage } = require('./integrations/twitch/twitchCommands')
 const { registerTwitchRewards } = require('./integrations/twitch/twitchRewards')
@@ -52,6 +52,7 @@ async function startObs() {
   }
 }
 startObs()
+getToken('user')
 
 // ============================================================
 // HTTP Keepalive Server
@@ -83,6 +84,11 @@ try {
 }
 
 ComfyJS.onConnected = () => logColor('green', `[TWITCH] ✅ Connected to ComfyJS`)
+
+if (!chat.enabled) {
+  ComfyJS.Say = (msg) => logColor('yellow', `[TWITCH] 🔇 Chat disabled — suppressed: ${msg}`)
+  logColor('yellow', '[TWITCH] ⚠️ CHAT_ENABLED=false — all outgoing chat messages are suppressed')
+}
 
 // ============================================================
 // Terminal -> Twitch Chat Bridge
@@ -169,8 +175,6 @@ ComfyJS.onRaid = async (user, viewers) => {
 
     ComfyJS.Say(`!so ${raider}`)
     await delay(600)
-    ComfyJS.Say(shoutoutMessage)
-    await delay(600)
     await sendChatAnnouncement({
       broadcasterId: twitch.channelUserId,
       moderatorId: twitch.botUserId,
@@ -240,7 +244,7 @@ twitchChatClient.on('message', async (target, context, msg, self) => {
       ? await matchedCommand.response(...args)
       : matchedCommand.response
 
-    if (response) twitchChatClient.say(target, response)
+    if (response && chat.enabled) twitchChatClient.say(target, response)
     logColor('green', `[TWITCH] ✅ Executed ${commandName} command`)
   } catch (err) {
     logColor('red', `[TWITCH] ❌ Error executing ${commandName}: ${err?.message || err}`)

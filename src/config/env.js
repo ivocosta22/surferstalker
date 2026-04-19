@@ -51,6 +51,12 @@ function requireEnvNumber(name) {
   return number
 }
 
+function optionalEnvBool(name, defaultValue) {
+  const value = process.env[name]
+  if (value === undefined || value === '') return defaultValue
+  return value.toLowerCase() !== 'false' && value !== '0'
+}
+
 
 // ============================================================
 // Export Immutable Config Object
@@ -95,5 +101,9 @@ module.exports = Object.freeze({
 
   server: Object.freeze({
     port: requireEnvNumber('SERVER_PORT')
+  }),
+
+  chat: Object.freeze({
+    enabled: optionalEnvBool('CHAT_ENABLED', true)
   })
 })
