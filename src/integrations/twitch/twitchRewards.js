@@ -10,6 +10,7 @@
  */
 const { twitch, twitchChannelPointsRewards } = require('../../config/env')
 const { timeoutCommand } = require('./twitchCommands')
+const songRequestClient = require('../player/songRequestClient')
 
 // ============================================================
 // Constants
@@ -57,8 +58,18 @@ function registerTwitchRewards({ ComfyJS, botState, obsController, logColor }) {
       // Song Request
       // ------------------------------------------------------------
       if (rewardId === twitchChannelPointsRewards.songRequest) {
-        logColor('yellow', `[TWITCH] ⚠️ Channel Points Reward: Song Request`)
-        ComfyJS.Say(`!sr ${message}`)
+        logColor('yellow', `[TWITCH] ⚠️ Channel Points Reward: Song Request from ${user}: ${message}`)
+        const { result, title, position } = await songRequestClient.enqueue(message?.trim(), user)
+        if (result === 'queued') {
+          const pos = position ? `at position #${position}` : 'to the queue'
+          ComfyJS.Say(`@${user} added "${title}" ${pos} - ${message?.trim()}`)
+        } else if (result === 'invalid_url') {
+          ComfyJS.Say(`@${user} that doesn't look like a valid YouTube link. Please redeem again with a YouTube URL.`)
+        } else if (result === 'requests_disabled') {
+          ComfyJS.Say(`@${user} song requests are currently disabled. Try again later!`)
+        } else {
+          ComfyJS.Say(`@${user} the song request player isn't running right now. Please try again later!`)
+        }
         return
       }
 

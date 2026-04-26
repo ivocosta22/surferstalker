@@ -27,7 +27,7 @@ const LOG_COLORS = {
 // Neutral Service Tags
 // These remain uncolored
 // ============================================================
-const NEUTRAL_TAGS = ['[TWITCH]','[DISCORD]', '[OBS]', '[SYSTEM]']
+const NEUTRAL_TAGS = ['[TWITCH]','[DISCORD]', '[OBS]', '[SYSTEM]', '[PLAYER]']
 
 
 // ============================================================

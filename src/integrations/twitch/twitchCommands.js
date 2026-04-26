@@ -14,6 +14,7 @@
 const superfetch = require('node-superfetch')
 const { twitch } = require('../../config/env')
 const { getToken, getUser, getUserCategory } = require('./twitchAPI')
+const songRequestClient = require('../player/songRequestClient')
 
 const WITHER_COOLDOWN_MS = 300_000
 
@@ -215,6 +216,43 @@ function createCommands(context) {
       return ''
     }
   }
+  let skipCooldownUntil = 0
+  const SKIP_COOLDOWN_MS = 5 * 60 * 1000
+
+  const skipCommand = () => {
+    const now = Date.now()
+    if (now < skipCooldownUntil) {
+      const remaining = Math.ceil((skipCooldownUntil - now) / 1000)
+      return `@${botState.commandCaller} skip is on cooldown for ${remaining}s.`
+    }
+    const result = songRequestClient.skip()
+    if (result === 'skipped') {
+      skipCooldownUntil = now + SKIP_COOLDOWN_MS
+      return `@${botState.commandCaller} skipped!`
+    }
+    if (result === 'player_offline') return `@${botState.commandCaller} the song request player isn't running right now.`
+    return ''
+  }
+
+  const srCommand = async (url) => {
+    const caller = botState.commandCaller
+    if (!url) return `@${caller} usage: !sr <YouTube URL>`
+    const { result, title, position } = await songRequestClient.enqueue(url, caller)
+    if (result === 'queued') {
+      const pos = position ? `at position #${position}` : 'to the queue'
+      return `@${caller} added "${title}" ${pos} - ${url}`
+    }
+    if (result === 'invalid_url')       return `@${caller} that doesn't look like a valid YouTube link.`
+    if (result === 'requests_disabled') return `@${caller} song requests are currently disabled. Try again later!`
+    return `@${caller} the song request player isn't running right now. Please try again later!`
+  }
+
+  const songCommand = () => {
+    const song = songRequestClient.getCurrentSong()
+    if (!song) return 'No song is currently playing.'
+    return `Current song: ${song.title} - ${song.url} | Requested by @${song.requester}`
+  }
+
   const reconnectOBSCommand = async () => {
     if (botState.commandCaller !== twitchChannelCaseSensitive) return
     await obsController.connect((result) => ComfyJS?.Say?.(`${result}`))
@@ -250,6 +288,9 @@ function createCommands(context) {
     { name: 'penta', response: pentaCommand },
     { name: 'pentakill', response: pentaCommand },
     { name: 'pentas', response: pentaCommand },
+    { name: 'sr', response: srCommand },
+    { name: 'skip', response: skipCommand },
+    { name: 'song', response: songCommand },
     { name: 'so', response: soCommand },
     { name: 'trihard', response: trihardCommand },
     { name: 'sick', response: sickCommand },

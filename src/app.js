@@ -23,6 +23,7 @@ logColor('cyan', '[SYSTEM] 👓 SurferStalker is starting...')
 
 const { twitch, discord, obs, chat } = require('./config/env')
 const { sendChatAnnouncement, getToken } = require('./integrations/twitch/twitchAPI')
+const songRequestClient = require('./integrations/player/songRequestClient')
 const obsController = require('./integrations/obs/obsController')
 const { createCommands, buildShoutoutMessage } = require('./integrations/twitch/twitchCommands')
 const { registerTwitchRewards } = require('./integrations/twitch/twitchRewards')
@@ -53,6 +54,7 @@ async function startObs() {
 }
 startObs()
 getToken('user')
+songRequestClient.start(logColor)
 
 // ============================================================
 // HTTP Keepalive Server
