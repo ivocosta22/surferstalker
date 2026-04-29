@@ -13,7 +13,7 @@
  */
 const superfetch = require('node-superfetch')
 const { twitch } = require('../../config/env')
-const { getToken, getUser, getUserCategory } = require('./twitchAPI')
+const { getToken, getUser, getUserCategory, getChannelInformation } = require('./twitchAPI')
 const songRequestClient = require('../player/songRequestClient')
 
 const WITHER_COOLDOWN_MS = 300_000
@@ -150,6 +150,14 @@ function createCommands(context) {
   const categoryCommand = async () => {
     const category = await getUserCategory(twitchChannel)
     return `@${twitchChannelCaseSensitive} is on the "${category || 'unknown'}" category.`
+  }
+
+  const titleCommand = async () => {
+    const info = await getChannelInformation(twitchChannelUserID)
+    const title = info?.title?.trim()
+    return title
+      ? `@${twitchChannelCaseSensitive}'s stream title is: ${title}`
+      : `Could not fetch the current stream title.`
   }
 
   const witherCommand = async (username) => {
@@ -297,6 +305,7 @@ function createCommands(context) {
     { name: 'tuck', response: tuckCommand },
     { name: 'game', response: categoryCommand },
     { name: 'category', response: categoryCommand },
+    { name: 'title', response: titleCommand },
     { name: 'obsreconnect', response: reconnectOBSCommand },
     { name: 'obsstatus', response: statusOBSCommand }
   ])

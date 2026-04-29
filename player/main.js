@@ -200,6 +200,26 @@ function playNext() {
   })
 }
 
+async function getPlaylistVideoIds(listId) {
+  try {
+    const res = await fetch(`https://www.youtube.com/playlist?list=${listId}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+        'Accept-Language': 'en-US,en;q=0.9'
+      }
+    })
+    if (!res.ok) return []
+    const html = await res.text()
+    // playlistVideoRenderer entries are the videos that belong to the playlist
+    // (this excludes recommendations / sidebar videos elsewhere on the page)
+    const ids = new Set()
+    const re = /"playlistVideoRenderer":\{"videoId":"([a-zA-Z0-9_-]{11})"/g
+    let m
+    while ((m = re.exec(html)) !== null) ids.add(m[1])
+    return Array.from(ids)
+  } catch { return [] }
+}
+
 async function getPlaylistSeedVideoId(listId) {
   try {
     const res = await fetch(
@@ -207,7 +227,6 @@ async function getPlaylistSeedVideoId(listId) {
     )
     if (!res.ok) return null
     const data = await res.json()
-    // oEmbed thumbnail URL contains a video ID: .../vi/VIDEO_ID/hqdefault.jpg
     const match = data.thumbnail_url?.match(/\/vi\/([^/]+)\//)
     return match ? match[1] : null
   } catch { return null }
@@ -221,9 +240,13 @@ async function playBackupPlaylist() {
 
   // Always use watch?v=VIDEO_ID&list=LIST_ID so YouTube doesn't
   // trigger device detection on a bare watch?list= URL.
+  // Pick a random video from the playlist so it doesn't always start with the same one.
   let url = backupPlaylistUrl
   if (listId) {
-    const seedId = await getPlaylistSeedVideoId(listId)
+    const ids = await getPlaylistVideoIds(listId)
+    const seedId = ids.length > 0
+      ? ids[Math.floor(Math.random() * ids.length)]
+      : await getPlaylistSeedVideoId(listId)
     url = seedId
       ? `https://www.youtube.com/watch?v=${seedId}&list=${listId}`
       : `https://www.youtube.com/watch?list=${listId}`
@@ -244,13 +267,6 @@ async function playBackupPlaylist() {
             || Array.from(document.querySelectorAll('button')).find(b =>
                 /shuffle/i.test(b.getAttribute('aria-label') || b.className))
           if (shuffle && shuffle.getAttribute('aria-pressed') !== 'true') shuffle.click()
-
-          // Enable loop — YouTube uses several possible selectors depending on version
-          const loop = document.querySelector('.ytp-repeat-button')
-            || document.querySelector('ytd-playlist-loop-button-renderer button')
-            || Array.from(document.querySelectorAll('button')).find(b =>
-                /loop|repeat/i.test(b.getAttribute('aria-label') || b.className))
-          if (loop && loop.getAttribute('aria-pressed') !== 'true') loop.click()
         `)
       } catch {}
     }, 3000)

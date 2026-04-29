@@ -235,7 +235,8 @@ twitchChatClient.on('message', async (target, context, msg, self) => {
   const args = parts
   logColor('yellow', `[TWITCH] ⚠️ Command Detected: ${commandName} ${args.join(' ')}`)
 
-  const matchedCommand = commands.find(c => c.name === commandName)
+  const lookup = commandName.toLowerCase()
+  const matchedCommand = commands.find(c => c.name.toLowerCase() === lookup)
   if (!matchedCommand) {
     logColor('red', `[TWITCH] ❌ Unknown command ${commandName}`)
     return

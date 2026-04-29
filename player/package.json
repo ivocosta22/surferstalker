@@ -1,7 +1,7 @@
 {
   "name": "surferstalker-player",
   "productName": "SurferStalker Player",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "YouTube player for SurferStalker song requests",
   "main": "main.js",
   "scripts": {
