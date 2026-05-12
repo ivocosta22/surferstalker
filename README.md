@@ -1,9 +1,9 @@
-# SurferStalker Bot
+# StreamerStalker Bot
 
 Custom Twitch & Discord bot with OBS integration, Twitch moderation tools, channel point reward handling, and an Electron-based song request media player.
 
 ## Overview
-SurferStalker is a Node.js-based integration bot that connects:
+StreamerStalker is a Node.js-based integration bot that connects:
 
 - Twitch Chat
 - Twitch API
