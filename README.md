@@ -1,18 +1,19 @@
-# SurferStalker Bot
+# StreamerStalker Bot
 
-Custom Twitch & Discord bot with OBS integration, Twitch moderation tools, and channel point reward handling.
+Custom Twitch & Discord bot with OBS integration, Twitch moderation tools, channel point reward handling, and an Electron-based song request media player.
 
 ## Overview
-SurferStalker is a Node.js-based integration bot that connects:
+StreamerStalker is a Node.js-based integration bot that connects:
 
 - Twitch Chat
 - Twitch API
 - Discord
 - OBS WebSocket
+- Electron Media Player
 
-It was developed to meet the specific automation and moderation needs of a Twitch live streamer. 
+It was developed to meet the specific automation and moderation needs of a Twitch live streamer.
 
-This bot provides moderation tools, channel point reward automation, cross-platform messaging, and camera/microphone automation during live streams.
+This bot provides moderation tools, channel point reward automation, cross-platform messaging, camera/microphone automation during live streams, and a custom desktop media player for handling viewer song requests.
 
 ---
 
@@ -37,6 +38,13 @@ This bot provides moderation tools, channel point reward automation, cross-platf
 - Permission-based message relay
 - Discord <> Twitch chat bridge
 
+### Electron Media Player
+- Desktop-based song request player
+- Stream-safe media playback controls
+- Queue management for viewer requests
+- Integrated with Twitch chat workflows
+- Designed for live stream music automation
+
 ### System
 - Centralized environment validation
 - Shared in-memory runtime state
@@ -51,12 +59,11 @@ This project follows a modular integration-based architecture:
 - **Singleton OBS Controller** encapsulating WebSocket logic
 - **Shared Runtime State** for consistent timeout stacking across commands and rewards
 - **Centralized Configuration Layer** with environment validation
-- **Separation of Concerns** between Twitch, Discord, OBS, and system layers
+- **Separation of Concerns** between Twitch, Discord, OBS, Electron media systems, and core runtime layers
 
 ## Setup
 
 ### 1. Install dependencies
-
 ```bash
 npm install
 ```
@@ -65,7 +72,7 @@ npm install
 
 Copy:
 ```bash
-.env.example 
+.env.example
 ```
 
 To:
@@ -76,7 +83,6 @@ To:
 Fill in the required credentials.
 
 ### 3. Run the bot
-
 ```bash
 npm start
 ```
@@ -92,6 +98,7 @@ Make sure the .env file is properly set up before running. Use the .env.example 
 ## Chat Token Storage
 
 User OAuth tokens are persisted locally in:
+
 src/config/tokens/twitch-user-tokens.json
 
 By default, if the file doesn't exist, it will be automatically created.
@@ -104,6 +111,7 @@ The tokens file is excluded from version control.
 
 - Node.js
 - Express
+- Electron
 - Twitch Helix API
 - Comfy.js
 - tmi.js
