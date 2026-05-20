@@ -9,5 +9,6 @@ contextBridge.exposeInMainWorld('playerAPI', {
   removeFromQueue:  (i)   => ipcRenderer.send('remove-from-queue', i),
   toggleRequests:   ()    => ipcRenderer.send('toggle-requests'),
   setBackupPlaylist:(url) => ipcRenderer.send('set-backup-playlist', url),
-  updateBackupPlaylist:(url) => ipcRenderer.send('update-backup-playlist', url)
+  updateBackupPlaylist:(url) => ipcRenderer.send('update-backup-playlist', url),
+  manualSr:(url) => ipcRenderer.invoke('manual-sr', url)
 })

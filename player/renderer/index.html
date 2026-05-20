@@ -340,6 +340,65 @@
     }
 
     /* ── Backup playlist ── */
+    #manual-sr-section {
+      padding: 10px 16px 12px;
+      border-top: 1px solid #2d2d31;
+      flex-shrink: 0;
+    }
+
+    #manual-sr-section .label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #adadb8;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    #manual-sr-input-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    #manual-sr-input {
+      flex: 1;
+      background: #0e0e10;
+      border: 1px solid #3d3d43;
+      border-radius: 6px;
+      color: #efeff1;
+      font-size: 11px;
+      padding: 7px 10px;
+      outline: none;
+      transition: border-color 0.15s;
+      min-width: 0;
+    }
+
+    #manual-sr-input:focus { border-color: #bf94ff; }
+    #manual-sr-input::placeholder { color: #3d3d43; }
+
+    #btn-manual-sr {
+      background: #2d2d31;
+      color: #efeff1;
+      border: none;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 7px 12px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+
+    #btn-manual-sr:hover { background: #3d3d43; }
+    #btn-manual-sr:disabled { opacity: 0.5; cursor: default; }
+
+    #manual-sr-status {
+      font-size: 10px;
+      margin-top: 4px;
+      min-height: 14px;
+    }
+
     #backup-section {
       padding: 10px 16px 12px;
       border-top: 1px solid #2d2d31;
@@ -448,6 +507,15 @@
 
     <div id="queue-list">
       <div id="queue-empty">Queue is empty</div>
+    </div>
+
+    <div id="manual-sr-section">
+      <div class="label">Manual Song Request</div>
+      <div id="manual-sr-input-row">
+        <input id="manual-sr-input" type="text" placeholder="YouTube URL" spellcheck="false" />
+        <button id="btn-manual-sr">Add</button>
+      </div>
+      <div id="manual-sr-status"></div>
     </div>
 
     <div id="backup-section">

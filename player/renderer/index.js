@@ -18,6 +18,9 @@ const queueCount     = document.getElementById('queue-count')
 const backupInput      = document.getElementById('backup-input')
 const backupModeDot    = document.getElementById('backup-mode-dot')
 const btnBackupUpdate  = document.getElementById('btn-backup-update')
+const manualSrInput    = document.getElementById('manual-sr-input')
+const btnManualSr      = document.getElementById('btn-manual-sr')
+const manualSrStatus   = document.getElementById('manual-sr-status')
 
 function thumbUrl(videoId) {
   return videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null
@@ -146,6 +149,35 @@ volumeSlider.addEventListener('input', () => {
   volumeLabel.textContent = v
   window.playerAPI.setVolume(v)
 })
+
+// Manual SR
+function setManualSrStatus(msg, isError) {
+  manualSrStatus.textContent = msg
+  manualSrStatus.style.color = isError ? '#f87171' : '#86efac'
+  if (msg) setTimeout(() => { manualSrStatus.textContent = '' }, 4000)
+}
+
+async function submitManualSr() {
+  const url = manualSrInput.value.trim()
+  if (!url) return
+  btnManualSr.disabled = true
+  setManualSrStatus('Adding...', false)
+  try {
+    const result = await window.playerAPI.manualSr(url)
+    if (result.ok) {
+      setManualSrStatus(`Queued: ${result.title} (#${result.position})`, false)
+      manualSrInput.value = ''
+    } else {
+      setManualSrStatus(result.error || 'Failed', true)
+    }
+  } catch {
+    setManualSrStatus('Error', true)
+  }
+  btnManualSr.disabled = false
+}
+
+btnManualSr.addEventListener('click', submitManualSr)
+manualSrInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitManualSr() })
 
 // Backup playlist — save on blur/Enter (no immediate switch); Update button switches immediately
 backupInput.addEventListener('blur', () => window.playerAPI.setBackupPlaylist(backupInput.value))

@@ -23,6 +23,7 @@ let requestsEnabled = true
 let volume = 100
 let backupPlaylistUrl = ''
 let backupMode = false
+let backupCurrentTrack = null
 
 // Keep a reference to the active bot socket so we can push status updates
 let botSocket = null
@@ -144,11 +145,12 @@ function broadcast() {
 
 function pushStatusToBot() {
   if (botSocket && botSocket.readyState === botSocket.OPEN) {
+    const active = currentTrack || (backupMode ? backupCurrentTrack : null)
     botSocket.send(JSON.stringify({
       type: 'status',
       requestsEnabled,
-      current: currentTrack
-        ? { title: currentTrack.title, url: currentTrack.url, requester: currentTrack.requester }
+      current: active
+        ? { title: active.title, url: active.url, requester: active.requester }
         : null
     }))
   }
@@ -163,6 +165,7 @@ function playNext() {
       playBackupPlaylist()
     } else {
       backupMode = false
+      backupCurrentTrack = null
       broadcast()
       playerView.webContents.loadURL('about:blank')
     }
@@ -170,6 +173,7 @@ function playNext() {
   }
 
   backupMode = false
+  backupCurrentTrack = null
   currentTrack = queue.shift()
   isPaused = false
   broadcast()
@@ -296,6 +300,7 @@ function addToQueue(url, requester, title) {
 
   if (backupMode) {
     backupMode = false
+    backupCurrentTrack = null
     playNext()
   } else {
     broadcast()
@@ -325,13 +330,23 @@ function startPollTimer() {
       return
     }
 
-    // In backup mode: only re-trigger if the entire playlist has ended
+    // In backup mode: track current song for !song command, re-trigger if playlist ended
     if (backupMode) {
       try {
-        const state = await playerView.webContents.executeJavaScript(
-          `document.querySelector('#movie_player')?.getPlayerState() ?? -1`
-        )
-        if (state === 0) playBackupPlaylist() // playlist ended — loop it
+        const info = await playerView.webContents.executeJavaScript(`
+          const p = document.querySelector('#movie_player')
+          const state = p?.getPlayerState() ?? -1
+          const data = p?.getVideoData?.() ?? {}
+          ;({ state, title: data.title || null, videoId: data.video_id || null })
+        `)
+        if (info.state === 0) {
+          playBackupPlaylist()
+        } else if (info.videoId) {
+          const url = `https://www.youtube.com/watch?v=${info.videoId}`
+          const changed = !backupCurrentTrack || backupCurrentTrack.videoId !== info.videoId
+          backupCurrentTrack = { title: info.title || info.videoId, url, videoId: info.videoId, requester: 'Backup Playlist' }
+          if (changed) pushStatusToBot()
+        }
       } catch {}
       return
     }
@@ -404,6 +419,21 @@ ipcMain.on('update-backup-playlist', (_e, url) => {
   broadcast()
   // Immediately switch to the new playlist if idle or already in backup mode
   if (backupPlaylistUrl && (!currentTrack || backupMode)) playBackupPlaylist()
+})
+
+ipcMain.handle('manual-sr', async (_e, url) => {
+  const trimmed = (url || '').trim()
+  if (!isYouTubeUrl(trimmed)) return { ok: false, error: 'Invalid YouTube URL' }
+  let title = null
+  try {
+    const res = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(trimmed)}&format=json`)
+    if (res.ok) {
+      const data = await res.json()
+      title = data.title || null
+    }
+  } catch { /* title stays null */ }
+  const position = addToQueue(trimmed, 'Manual', title)
+  return { ok: true, title: title || trimmed, position }
 })
 
 // ── WebSocket server (SurferStalker bot connects here) ────────────────────────
